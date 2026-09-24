@@ -1,0 +1,232 @@
+================================================================================
+              FAN HUB PLUS BACKEND — COMPLETE API TESTING GUIDE
+================================================================================
+Base URL: http://localhost:5000
+
+--------------------------------------------------------------------------------
+1. AUTHENTICATION APIs
+--------------------------------------------------------------------------------
+
+[1] USER REGISTRATION
+URL: POST http://localhost:5000/api/auth/register
+Access: Public
+Headers: Content-Type: application/json
+Body:
+{
+    "name": "Ahmed Raza",
+    "email": "ahmed@example.com",
+    "password": "Password123"
+}
+Explanation: Registers a new normal user with role = "user". Hashes password using bcrypt.
+
+
+[2] USER LOGIN
+URL: POST http://localhost:5000/api/auth/login
+Access: Public
+Headers: Content-Type: application/json
+Body:
+{
+    "email": "ahmed@example.com",
+    "password": "Password123"
+}
+Explanation: Verifies user credentials using bcrypt and returns a JWT token for authentication.
+
+
+[3] FETCH CURRENT USER PROFILE
+URL: GET http://localhost:5000/api/auth/me
+Access: Protected (Requires User or Admin JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <YOUR_JWT_TOKEN>
+Explanation: Returns the profile data of the currently logged-in user based on the JWT token.
+
+
+--------------------------------------------------------------------------------
+2. USER MANAGEMENT APIs (ADMIN ONLY)
+--------------------------------------------------------------------------------
+
+[4] FETCH ALL USERS
+URL: GET http://localhost:5000/api/users
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Fetches a list of all registered users without exposing passwords.
+
+
+[5] FETCH SINGLE USER BY ID
+URL: GET http://localhost:5000/api/users/66f000000000000000000101
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Fetches public profile information for a specific user ID.
+
+
+--------------------------------------------------------------------------------
+3. CATEGORIES APIs
+--------------------------------------------------------------------------------
+
+[6] FETCH ALL CATEGORIES
+URL: GET http://localhost:5000/api/categories
+Access: Public
+Explanation: Fetches all active categories (Anime, Gaming, Movies, TV Shows, K-Pop, Comics, Manga, Cosplay).
+
+
+[7] FETCH SINGLE CATEGORY BY ID
+URL: GET http://localhost:5000/api/categories/66f000000000000000000001
+Access: Public
+Explanation: Fetches full details for a single category using its ObjectId.
+
+
+--------------------------------------------------------------------------------
+4. CONTENT APIs
+--------------------------------------------------------------------------------
+
+[8] FETCH ALL CONTENT
+URL: GET http://localhost:5000/api/content
+Access: Public
+Explanation: Returns all content items along with populated category details.
+
+
+[9] FILTER CONTENT BY CATEGORY
+URL: GET http://localhost:5000/api/content?category=66f000000000000000000001
+Access: Public
+Explanation: Filters content items that belong to a specific category ObjectId (e.g. Anime).
+
+
+[10] FILTER CONTENT BY TYPE
+URL: GET http://localhost:5000/api/content?contentType=video
+Access: Public
+Explanation: Filters content items by type (article, video, audio, image, trailer).
+
+
+[11] SEARCH CONTENT BY TITLE
+URL: GET http://localhost:5000/api/content?search=naruto
+Access: Public
+Explanation: Performs a case-insensitive keyword search on content titles.
+
+
+[12] FETCH SINGLE CONTENT BY ID
+URL: GET http://localhost:5000/api/content/66f000000000000000000201
+Access: Public
+Explanation: Returns full content details populated with its category name and slug.
+
+
+--------------------------------------------------------------------------------
+5. CHARACTERS APIs
+--------------------------------------------------------------------------------
+
+[13] FETCH ALL CHARACTERS
+URL: GET http://localhost:5000/api/characters
+Access: Public
+Query Param Optional: ?category=66f000000000000000000001
+Explanation: Fetches characters along with populated category and related content references.
+
+
+[14] FETCH SINGLE CHARACTER BY ID
+URL: GET http://localhost:5000/api/characters/66f000000000000000000301
+Access: Public
+Explanation: Returns detailed bio, category, and content links for a single character.
+
+
+--------------------------------------------------------------------------------
+6. MERCHANDISE APIs
+--------------------------------------------------------------------------------
+
+[15] FETCH ALL MERCHANDISE
+URL: GET http://localhost:5000/api/merchandise
+Access: Public
+Query Param Optional: ?category=66f000000000000000000001
+Explanation: Fetches showcase merchandise items.
+
+
+[16] FILTER UPCOMING MERCHANDISE
+URL: GET http://localhost:5000/api/merchandise?isUpcoming=true
+Access: Public
+Explanation: Filters merchandise items marked as upcoming releases.
+
+
+[17] FETCH SINGLE MERCHANDISE BY ID
+URL: GET http://localhost:5000/api/merchandise/66f000000000000000000401
+Access: Public
+Explanation: Fetches full details for a single merchandise showcase item.
+
+
+--------------------------------------------------------------------------------
+7. EVENTS APIs
+--------------------------------------------------------------------------------
+
+[18] FETCH ALL EVENTS
+URL: GET http://localhost:5000/api/events
+Access: Public
+Query Param Optional: ?category=66f000000000000000000001
+Explanation: Returns fan events with venue, coordinates, and ticketing URLs.
+
+
+[19] FILTER EVENTS BY CITY
+URL: GET http://localhost:5000/api/events?city=Karachi
+Access: Public
+Explanation: Filters events matching a city name (e.g. Karachi, Lahore).
+
+
+[20] FETCH SINGLE EVENT BY ID
+URL: GET http://localhost:5000/api/events/66f000000000000000000501
+Access: Public
+Explanation: Returns complete information for a single event.
+
+
+--------------------------------------------------------------------------------
+8. FAN SUBMISSIONS APIs (PUBLIC)
+--------------------------------------------------------------------------------
+
+[21] FETCH APPROVED FAN SUBMISSIONS
+URL: GET http://localhost:5000/api/fan-submissions
+Access: Public
+Explanation: Returns fan submissions that have been moderated and approved by admin.
+
+
+[22] FETCH SINGLE APPROVED FAN SUBMISSION BY ID
+URL: GET http://localhost:5000/api/fan-submissions/66f000000000000000000901
+Access: Public
+Explanation: Returns details of a specific approved fan submission.
+
+
+--------------------------------------------------------------------------------
+9. USER PERSONAL DATA APIs
+--------------------------------------------------------------------------------
+
+[23] FETCH CURRENT USER BOOKMARKS
+URL: GET http://localhost:5000/api/bookmarks
+Access: Protected (Requires User JWT Token)
+Headers:
+    Authorization: Bearer <USER_JWT_TOKEN>
+Explanation: Fetches only the bookmarked content belonging to the authenticated user.
+
+
+[24] FETCH CURRENT USER RATINGS
+URL: GET http://localhost:5000/api/ratings
+Access: Protected (Requires User JWT Token)
+Headers:
+    Authorization: Bearer <USER_JWT_TOKEN>
+Explanation: Fetches only the content ratings submitted by the authenticated user.
+
+
+--------------------------------------------------------------------------------
+10. ADMIN MODERATION APIs
+--------------------------------------------------------------------------------
+
+[25] FETCH ALL FEEDBACK (ADMIN ONLY)
+URL: GET http://localhost:5000/api/feedback
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Allows admin to view all user feedback messages (bug, suggestion, query).
+
+
+[26] FETCH ALL FAN SUBMISSIONS (ADMIN ONLY)
+URL: GET http://localhost:5000/api/admin/fan-submissions
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Allows admin to view all submissions regardless of status (pending, approved, rejected).
+
+================================================================================

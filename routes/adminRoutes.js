@@ -1,9 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const { getAdminSubmissions } = require("../controllers/fanSubmissionController");
+const {
+  getAdminSubmissions,
+  getAdminSubmissionById,
+  updateAdminSubmission,
+  deleteAdminSubmission
+} = require("../controllers/fanSubmissionController");
+const {
+  getFeedback,
+  getFeedbackById,
+  updateFeedback,
+  deleteFeedback
+} = require("../controllers/feedbackController");
 const { protect } = require("../middleware/authMiddleware");
 const { admin } = require("../middleware/adminMiddleware");
 
+// Admin Fan Submission Management
 router.get("/fan-submissions", protect, admin, getAdminSubmissions);
+router.get("/fan-submissions/:id", protect, admin, getAdminSubmissionById);
+router.put("/fan-submissions/:id", protect, admin, updateAdminSubmission);
+router.delete("/fan-submissions/:id", protect, admin, deleteAdminSubmission);
+
+// Admin Feedback Management
+router.get("/feedback", protect, admin, getFeedback);
+router.get("/feedback/:id", protect, admin, getFeedbackById);
+router.put("/feedback/:id", protect, admin, updateFeedback);
+router.delete("/feedback/:id", protect, admin, deleteFeedback);
 
 module.exports = router;
+

@@ -7,11 +7,18 @@ const protect = async (req, res, next) => {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required"
+        message: "Authentication token is required"
       });
     }
 
     const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication token is required"
+      });
+    }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -24,7 +31,7 @@ const protect = async (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Authentication required"
+      message: "Invalid or expired token"
     });
   }
 };
@@ -32,3 +39,4 @@ const protect = async (req, res, next) => {
 module.exports = {
   protect
 };
+

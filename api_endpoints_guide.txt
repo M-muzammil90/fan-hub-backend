@@ -1,4 +1,4 @@
-================================================================================
+f================================================================================
               FAN HUB PLUS BACKEND — COMPLETE API TESTING GUIDE
 ================================================================================
 Base URL: http://localhost:5000
@@ -61,140 +61,437 @@ Headers:
 Explanation: Fetches public profile information for a specific user ID.
 
 
+[6] UPDATE USER (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/users/66f000000000000000000101
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Ahmed Raza Updated",
+    "email": "ahmed.new@example.com",
+    "avatar": "https://example.com/avatar.jpg",
+    "role": "user"
+}
+Explanation: Updates user profile or role (admin can change user roles).
+
+
+[7] DELETE USER (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/users/66f000000000000000000101
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes a user account. Admins are blocked from deleting their own active account.
+
+
 --------------------------------------------------------------------------------
 3. CATEGORIES APIs
 --------------------------------------------------------------------------------
 
-[6] FETCH ALL CATEGORIES
+[8] FETCH ALL CATEGORIES
 URL: GET http://localhost:5000/api/categories
 Access: Public
 Explanation: Fetches all active categories (Anime, Gaming, Movies, TV Shows, K-Pop, Comics, Manga, Cosplay).
 
 
-[7] FETCH SINGLE CATEGORY BY ID
+[9] FETCH SINGLE CATEGORY BY ID
 URL: GET http://localhost:5000/api/categories/66f000000000000000000001
 Access: Public
 Explanation: Fetches full details for a single category using its ObjectId.
+
+
+[10] CREATE CATEGORY (ADMIN ONLY)
+URL: POST http://localhost:5000/api/categories
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Anime",
+    "slug": "anime",
+    "description": "Japanese animated series and movies",
+    "image": "https://example.com/anime.jpg",
+    "isActive": true
+}
+Explanation: Creates a new category. Name and slug must be unique.
+
+
+[11] UPDATE CATEGORY BY ID (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/categories/66f000000000000000000001
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Anime Central",
+    "description": "Updated category description"
+}
+Explanation: Updates an existing category details by ObjectId.
+
+
+[12] DELETE CATEGORY BY ID (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/categories/66f000000000000000000001
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes a category. Prevents deletion if category is referenced by active content, characters, merchandise, or events.
 
 
 --------------------------------------------------------------------------------
 4. CONTENT APIs
 --------------------------------------------------------------------------------
 
-[8] FETCH ALL CONTENT
+[13] FETCH ALL CONTENT
 URL: GET http://localhost:5000/api/content
 Access: Public
 Explanation: Returns all content items along with populated category details.
 
 
-[9] FILTER CONTENT BY CATEGORY
+[14] FILTER CONTENT BY CATEGORY
 URL: GET http://localhost:5000/api/content?category=66f000000000000000000001
 Access: Public
 Explanation: Filters content items that belong to a specific category ObjectId (e.g. Anime).
 
 
-[10] FILTER CONTENT BY TYPE
+[15] FILTER CONTENT BY TYPE
 URL: GET http://localhost:5000/api/content?contentType=video
 Access: Public
 Explanation: Filters content items by type (article, video, audio, image, trailer).
 
 
-[11] SEARCH CONTENT BY TITLE
+[16] SEARCH CONTENT BY TITLE
 URL: GET http://localhost:5000/api/content?search=naruto
 Access: Public
 Explanation: Performs a case-insensitive keyword search on content titles.
 
 
-[12] FETCH SINGLE CONTENT BY ID
+[17] FETCH SINGLE CONTENT BY ID
 URL: GET http://localhost:5000/api/content/66f000000000000000000201
 Access: Public
 Explanation: Returns full content details populated with its category name and slug.
+
+
+[18] CREATE CONTENT (ADMIN ONLY)
+URL: POST http://localhost:5000/api/content
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "title": "Naruto Shippuden Episode 1",
+    "slug": "naruto-shippuden-ep1",
+    "description": "The journey begins again",
+    "category": "66f000000000000000000001",
+    "contentType": "video",
+    "genre": ["Action", "Adventure"],
+    "releaseDate": "2007-02-15",
+    "popularityScore": 95,
+    "thumbnail": "https://example.com/naruto-thumb.jpg",
+    "mediaUrl": "https://example.com/naruto-ep1.mp4",
+    "tags": ["naruto", "anime"],
+    "isFeatured": true
+}
+Explanation: Creates new media/article content under a specific category.
+
+
+[19] UPDATE CONTENT BY ID (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/content/66f000000000000000000201
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "title": "Naruto Shippuden Ep 1 (HD)",
+    "popularityScore": 98,
+    "isFeatured": true
+}
+Explanation: Updates existing content fields by ObjectId.
+
+
+[20] DELETE CONTENT BY ID (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/content/66f000000000000000000201
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes content item and automatically cascades deletion to remove all associated user bookmarks and ratings.
 
 
 --------------------------------------------------------------------------------
 5. CHARACTERS APIs
 --------------------------------------------------------------------------------
 
-[13] FETCH ALL CHARACTERS
+[21] FETCH ALL CHARACTERS
 URL: GET http://localhost:5000/api/characters
 Access: Public
 Query Param Optional: ?category=66f000000000000000000001
 Explanation: Fetches characters along with populated category and related content references.
 
 
-[14] FETCH SINGLE CHARACTER BY ID
+[22] FETCH SINGLE CHARACTER BY ID
 URL: GET http://localhost:5000/api/characters/66f000000000000000000301
 Access: Public
 Explanation: Returns detailed bio, category, and content links for a single character.
+
+
+[23] CREATE CHARACTER (ADMIN ONLY)
+URL: POST http://localhost:5000/api/characters
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Naruto Uzumaki",
+    "slug": "naruto-uzumaki",
+    "bio": "The ninja who never gives up",
+    "image": "https://example.com/naruto.jpg",
+    "category": "66f000000000000000000001",
+    "content": ["66f000000000000000000201"],
+    "tags": ["ninja", "hokage"]
+}
+Explanation: Adds a new character profile linked to a category and content items.
+
+
+[24] UPDATE CHARACTER BY ID (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/characters/66f000000000000000000301
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "bio": "Updated bio for Naruto Uzumaki",
+    "tags": ["ninja", "hokage", "hero"]
+}
+Explanation: Updates character profile details.
+
+
+[25] DELETE CHARACTER BY ID (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/characters/66f000000000000000000301
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes a character profile from the database.
 
 
 --------------------------------------------------------------------------------
 6. MERCHANDISE APIs
 --------------------------------------------------------------------------------
 
-[15] FETCH ALL MERCHANDISE
+[26] FETCH ALL MERCHANDISE
 URL: GET http://localhost:5000/api/merchandise
 Access: Public
 Query Param Optional: ?category=66f000000000000000000001
 Explanation: Fetches showcase merchandise items.
 
 
-[16] FILTER UPCOMING MERCHANDISE
+[27] FILTER UPCOMING MERCHANDISE
 URL: GET http://localhost:5000/api/merchandise?isUpcoming=true
 Access: Public
 Explanation: Filters merchandise items marked as upcoming releases.
 
 
-[17] FETCH SINGLE MERCHANDISE BY ID
+[28] FETCH SINGLE MERCHANDISE BY ID
 URL: GET http://localhost:5000/api/merchandise/66f000000000000000000401
 Access: Public
 Explanation: Fetches full details for a single merchandise showcase item.
+
+
+[29] CREATE MERCHANDISE (ADMIN ONLY)
+URL: POST http://localhost:5000/api/merchandise
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Naruto Headband",
+    "slug": "naruto-headband",
+    "description": "Official Konoha headband replica",
+    "category": "66f000000000000000000001",
+    "images": ["https://example.com/headband1.jpg"],
+    "tag": ["naruto", "cosplay"],
+    "isUpcoming": false,
+    "releaseDate": "2024-01-01"
+}
+Explanation: Creates a showcase merchandise entry (no e-commerce checkout).
+
+
+[30] UPDATE MERCHANDISE BY ID (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/merchandise/66f000000000000000000401
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "name": "Naruto Headband (Deluxe)",
+    "isUpcoming": true
+}
+Explanation: Updates merchandise showcase details.
+
+
+[31] DELETE MERCHANDISE BY ID (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/merchandise/66f000000000000000000401
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes a merchandise item from the showcase.
 
 
 --------------------------------------------------------------------------------
 7. EVENTS APIs
 --------------------------------------------------------------------------------
 
-[18] FETCH ALL EVENTS
+[32] FETCH ALL EVENTS
 URL: GET http://localhost:5000/api/events
 Access: Public
 Query Param Optional: ?category=66f000000000000000000001
 Explanation: Returns fan events with venue, coordinates, and ticketing URLs.
 
 
-[19] FILTER EVENTS BY CITY
+[33] FILTER EVENTS BY CITY
 URL: GET http://localhost:5000/api/events?city=Karachi
 Access: Public
 Explanation: Filters events matching a city name (e.g. Karachi, Lahore).
 
 
-[20] FETCH SINGLE EVENT BY ID
+[34] FETCH SINGLE EVENT BY ID
 URL: GET http://localhost:5000/api/events/66f000000000000000000501
 Access: Public
 Explanation: Returns complete information for a single event.
 
 
+[35] CREATE EVENT (ADMIN ONLY)
+URL: POST http://localhost:5000/api/events
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "title": "Anime Convention Karachi 2026",
+    "slug": "anime-con-karachi-2026",
+    "description": "Annual anime fan convention in Karachi",
+    "category": "66f000000000000000000001",
+    "city": "Karachi",
+    "venue": "Expo Center",
+    "address": "University Road, Karachi",
+    "latitude": 24.8607,
+    "longitude": 67.0011,
+    "startDate": "2026-12-01",
+    "endDate": "2026-12-03",
+    "image": "https://example.com/event.jpg",
+    "ticketUrl": "https://tickets.example.com",
+    "isFeatured": true
+}
+Explanation: Creates a new fan event entry. Validates start and end dates.
+
+
+[36] UPDATE EVENT BY ID (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/events/66f000000000000000000501
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "venue": "Expo Center Hall 1 & 2",
+    "isFeatured": true
+}
+Explanation: Updates fan event details by ObjectId.
+
+
+[37] DELETE EVENT BY ID (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/events/66f000000000000000000501
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Deletes an event entry from the database.
+
+
 --------------------------------------------------------------------------------
-8. FAN SUBMISSIONS APIs (PUBLIC)
+8. FAN SUBMISSIONS APIs
 --------------------------------------------------------------------------------
 
-[21] FETCH APPROVED FAN SUBMISSIONS
+[38] FETCH APPROVED FAN SUBMISSIONS (PUBLIC)
 URL: GET http://localhost:5000/api/fan-submissions
 Access: Public
 Explanation: Returns fan submissions that have been moderated and approved by admin.
 
 
-[22] FETCH SINGLE APPROVED FAN SUBMISSION BY ID
+[39] FETCH SINGLE APPROVED FAN SUBMISSION BY ID (PUBLIC)
 URL: GET http://localhost:5000/api/fan-submissions/66f000000000000000000901
 Access: Public
 Explanation: Returns details of a specific approved fan submission.
 
 
+[40] CREATE FAN SUBMISSION (USER) // successfully tested
+URL: POST http://localhost:5000/api/fan-submissions
+Access: Protected (Requires User JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <USER_JWT_TOKEN>
+Body:
+{
+    "title": "My Naruto Fanart",
+    "description": "Drew this over the weekend",
+    "content": "This is my tribute to Naruto Uzumaki...",
+    "category": "66f000000000000000000001",
+    "image": "https://example.com/fanart.jpg"
+}
+Explanation: User submits original artwork/article. Submission status is always set to "pending" by default.
+
+
+[41] FETCH ALL FAN SUBMISSIONS (ADMIN ONLY)
+URL: GET http://localhost:5000/api/admin/fan-submissions
+Access: Protected (Admin Only)
+Query Param Optional: ?status=pending
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Allows admin to view all submissions regardless of status (pending, approved, rejected).
+
+
+[42] FETCH SINGLE FAN SUBMISSION BY ID (ADMIN ONLY)
+URL: GET http://localhost:5000/api/admin/fan-submissions/66f000000000000000000901
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Allows admin to view details of any submission regardless of status.
+
+
+[43] MODERATE / UPDATE FAN SUBMISSION (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/admin/fan-submissions/66f000000000000000000901
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "status": "approved",
+    "adminNote": "Great submission! Approved for public display."
+}
+Explanation: Allows admin to change submission status to 'approved' or 'rejected' with optional feedback note.
+
+
+[44] DELETE FAN SUBMISSION (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/admin/fan-submissions/66f000000000000000000901
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Allows admin to permanently delete a fan submission.
+
+
 --------------------------------------------------------------------------------
-9. USER PERSONAL DATA APIs
+9. USER PERSONAL DATA APIs (BOOKMARKS & RATINGS)
 --------------------------------------------------------------------------------
 
-[23] FETCH CURRENT USER BOOKMARKS
+[45] FETCH CURRENT USER BOOKMARKS
 URL: GET http://localhost:5000/api/bookmarks
 Access: Protected (Requires User JWT Token)
 Headers:
@@ -202,7 +499,29 @@ Headers:
 Explanation: Fetches only the bookmarked content belonging to the authenticated user.
 
 
-[24] FETCH CURRENT USER RATINGS
+[46] ADD BOOKMARK
+URL: POST http://localhost:5000/api/bookmarks
+Access: Protected (Requires User JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <USER_JWT_TOKEN>
+Body:
+{
+    "content": "66f000000000000000000201",
+    "note": "Read later"
+}
+Explanation: Adds content to authenticated user's bookmarks. Prevents duplicates.
+
+
+[47] DELETE BOOKMARK
+URL: DELETE http://localhost:5000/api/bookmarks/66f000000000000000000801
+Access: Protected (Requires User JWT Token)
+Headers:
+    Authorization: Bearer <USER_JWT_TOKEN>
+Explanation: Removes a bookmark. Ensures users can only delete their own bookmarks.
+
+
+[48] FETCH CURRENT USER RATINGS
 URL: GET http://localhost:5000/api/ratings
 Access: Protected (Requires User JWT Token)
 Headers:
@@ -210,23 +529,94 @@ Headers:
 Explanation: Fetches only the content ratings submitted by the authenticated user.
 
 
+[49] ADD RATING
+URL: POST http://localhost:5000/api/ratings
+Access: Protected (Requires User JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <USER_JWT_TOKEN>
+Body:
+{
+    "content": "66f000000000000000000201",
+    "rating": 5
+}
+Explanation: Submits a rating (1 to 5 stars) for a content item. Prevents multiple ratings for same content by same user.
+
+
+[50] UPDATE RATING BY ID
+URL: PUT http://localhost:5000/api/ratings/66f000000000000000000701
+Access: Protected (Requires User JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <USER_JWT_TOKEN>
+Body:
+{
+    "rating": 4
+}
+Explanation: Updates an existing rating value (1-5). User can only update their own rating.
+
+
+[51] DELETE RATING BY ID
+URL: DELETE http://localhost:5000/api/ratings/66f000000000000000000701
+Access: Protected (Requires User JWT Token)
+Headers:
+    Authorization: Bearer <USER_JWT_TOKEN>
+Explanation: Deletes a user rating by ID. User can only delete their own rating.
+
+
 --------------------------------------------------------------------------------
-10. ADMIN MODERATION APIs
+10. FEEDBACK & MODERATION APIs
 --------------------------------------------------------------------------------
 
-[25] FETCH ALL FEEDBACK (ADMIN ONLY)
+[52] SUBMIT FEEDBACK (USER / PUBLIC)
+URL: POST http://localhost:5000/api/feedback
+Access: Protected (Requires User JWT Token - Optional/Anonymous supported)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <USER_JWT_TOKEN>
+Body:
+{
+    "type": "bug",
+    "message": "The search filter is not working properly on mobile screens."
+}
+Explanation: Submits user feedback (bug, suggestion, query).
+
+
+[53] FETCH ALL FEEDBACK (ADMIN ONLY)
 URL: GET http://localhost:5000/api/feedback
 Access: Protected (Admin Only)
+Query Param Optional: ?status=pending&type=bug
 Headers:
     Authorization: Bearer <ADMIN_JWT_TOKEN>
-Explanation: Allows admin to view all user feedback messages (bug, suggestion, query).
+Explanation: Allows admin to view all user feedback messages.
 
 
-[26] FETCH ALL FAN SUBMISSIONS (ADMIN ONLY)
-URL: GET http://localhost:5000/api/admin/fan-submissions
+[54] FETCH SINGLE FEEDBACK BY ID (ADMIN ONLY)
+URL: GET http://localhost:5000/api/admin/feedback/66f000000000000000000601
 Access: Protected (Admin Only)
 Headers:
     Authorization: Bearer <ADMIN_JWT_TOKEN>
-Explanation: Allows admin to view all submissions regardless of status (pending, approved, rejected).
+Explanation: Allows admin to view specific feedback message details.
+
+
+[55] UPDATE FEEDBACK STATUS (ADMIN ONLY)
+URL: PUT http://localhost:5000/api/admin/feedback/66f000000000000000000601
+Access: Protected (Admin Only)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Body:
+{
+    "status": "resolved"
+}
+Explanation: Updates feedback status (pending, reviewed, resolved, ignored).
+
+
+[56] DELETE FEEDBACK (ADMIN ONLY)
+URL: DELETE http://localhost:5000/api/admin/feedback/66f000000000000000000601
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Permanently deletes a feedback message.
 
 ================================================================================

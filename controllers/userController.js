@@ -219,10 +219,97 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const { name, avatar, favoriteCategories } = req.body;
+
+    if (name === undefined && avatar === undefined && favoriteCategories === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one valid profile field (name, avatar, favoriteCategories) must be provided for update"
+      });
+    }
+
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Name cannot be empty"
+        });
+      }
+      user.name = name.trim();
+    }
+
+    if (avatar !== undefined) {
+      user.avatar = typeof avatar === "string" ? avatar.trim() : avatar;
+    }
+
+    if (favoriteCategories !== undefined) {
+      if (!Array.isArray(favoriteCategories)) {
+        return res.status(400).json({
+          success: false,
+          message: "favoriteCategories must be an array of category IDs"
+        });
+      }
+      for (const catId of favoriteCategories) {
+        if (!mongoose.Types.ObjectId.isValid(catId)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid category ID: ${catId}`
+          });
+        }
+        const catExists = await Category.findById(catId);
+        if (!catExists) {
+          return res.status(404).json({
+            success: false,
+            message: `Referenced category not found: ${catId}`
+          });
+        }
+      }
+      user.favoriteCategories = favoriteCategories;
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(userId)
+      .select("-password")
+      .populate("favoriteCategories", "name slug");
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+        favoriteCategories: updatedUser.favoriteCategories
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  updateUserProfile
 };
+
 

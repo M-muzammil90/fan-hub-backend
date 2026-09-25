@@ -619,4 +619,151 @@ Headers:
     Authorization: Bearer <ADMIN_JWT_TOKEN>
 Explanation: Permanently deletes a feedback message.
 
+
+--------------------------------------------------------------------------------
+11. USER SELF-SERVICE APIs
+--------------------------------------------------------------------------------
+
+[57] UPDATE CURRENT USER PROFILE
+URL: PUT http://localhost:5000/api/users/profile
+Access: Protected (Requires User or Admin JWT Token)
+Headers:
+    Content-Type: application/json
+    Authorization: Bearer <YOUR_JWT_TOKEN>
+Body:
+{
+    "name": "Ahmed Raza Updated",
+    "avatar": "https://example.com/new-avatar.jpg",
+    "favoriteCategories": ["66f000000000000000000001"]
+}
+Explanation: Allows an authenticated user to update their own profile information (name, avatar, favorite categories). Does not allow privilege escalation or modifying role/email/password.
+
+--------------------------------------------------------------------------------
+12. CONTENT FILTERING & SORTING APIs
+--------------------------------------------------------------------------------
+
+[58] FILTER CONTENT BY GENRE
+URL: GET http://localhost:5000/api/content?genre=Action
+Access: Public
+Explanation: Filters content items by genre (case-insensitive search matching genre array elements).
+
+
+[59] FILTER CONTENT BY RELEASE YEAR
+URL: GET http://localhost:5000/api/content?year=2026
+Access: Public
+Explanation: Filters content items released in a specific calendar year.
+
+
+[60] SORT CONTENT BY LATEST
+URL: GET http://localhost:5000/api/content?sortBy=latest
+Access: Public
+Explanation: Sorts content items with the newest release date first.
+
+
+[61] SORT CONTENT BY POPULARITY
+URL: GET http://localhost:5000/api/content?sortBy=popular
+Access: Public
+Explanation: Sorts content items by popularity score and view count descending.
+
+
+[62] SORT CONTENT ALPHABETICALLY
+URL: GET http://localhost:5000/api/content?sortBy=alphabetical
+Access: Public
+Explanation: Sorts content items alphabetically by title (A-Z).
+
+
+[63] COMBINED CONTENT FILTERS AND SORTING
+URL: GET http://localhost:5000/api/content?category/66f000000000000000000001&genre=Action&year=2024&contentType=video&sortBy=popular
+Access: Public
+Explanation: Combines category, genre, year, content type filtering and popular sorting.
+
+--------------------------------------------------------------------------------
+13. CONTENT RATING AGGREGATION APIs
+--------------------------------------------------------------------------------
+
+[64] FETCH CONTENT WITH RATING AGGREGATION
+URL: GET http://localhost:5000/api/content
+Access: Public
+Explanation: Every content item in the returned array includes aggregated averageRating and totalRatings fields (e.g. averageRating: 4.3, totalRatings: 27, or 0 if unrated).
+
+
+[65] FETCH SINGLE CONTENT DETAILS WITH RATING AGGREGATION
+URL: GET http://localhost:5000/api/content/66f000000000000000000201
+Access: Public
+Explanation: Returns detailed content response including calculated averageRating and totalRatings.
+
+--------------------------------------------------------------------------------
+14. ADMIN ANALYTICS DASHBOARD APIs
+--------------------------------------------------------------------------------
+
+[66] FETCH ADMIN DASHBOARD ANALYTICS
+URL: GET http://localhost:5000/api/admin/analytics
+Access: Protected (Admin Only)
+Headers:
+    Authorization: Bearer <ADMIN_JWT_TOKEN>
+Explanation: Returns platform usage statistics for admin dashboard including user counts, content totals, popular categories, and platform activity metrics.
+
+Example Response:
+{
+    "success": true,
+    "analytics": {
+        "users": {
+            "totalUsers": 15,
+            "activeUsers": 14
+        },
+        "content": {
+            "totalContent": 20,
+            "featuredContent": 4
+        },
+        "popularCategories": [
+            {
+                "_id": "66f000000000000000000001",
+                "name": "Anime",
+                "slug": "anime",
+                "totalContent": 8,
+                "totalViews": 450,
+                "averagePopularity": 92.5
+            }
+        ],
+        "activity": {
+            "totalCategories": 6,
+            "totalCharacters": 10,
+            "totalMerchandise": 8,
+            "totalEvents": 5,
+            "totalSubmissions": 12,
+            "pendingSubmissions": 3,
+            "totalRatings": 45,
+            "totalBookmarks": 28,
+            "totalFeedback": 7
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+15. PASSWORD RECOVERY APIs
+--------------------------------------------------------------------------------
+
+[67] FORGOT PASSWORD (REQUEST RESET TOKEN)
+URL: POST http://localhost:5000/api/auth/forgot-password
+Access: Public
+Headers: Content-Type: application/json
+Body:
+{
+    "email": "ahmed@example.com"
+}
+Explanation: Generates a 32-byte secure random reset token, stores a SHA-256 hashed copy with a 10-minute expiration, and sends the password reset link to the user's email via Nodemailer. Returns a generic success response without exposing tokens or email existence.
+
+
+[68] RESET PASSWORD (SUBMIT TOKEN & NEW PASSWORD)
+URL: POST http://localhost:5000/api/auth/reset-password
+Access: Public
+Headers: Content-Type: application/json
+Body:
+{
+    "token": "<RESET_TOKEN>",
+    "password": "NewPassword123"
+}
+Explanation: Validates token hash and expiration. Hashes the new password using bcryptjs, updates user credentials, and invalidates the reset token to prevent reuse.
+
 ================================================================================
+

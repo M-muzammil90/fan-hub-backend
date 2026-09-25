@@ -32,7 +32,13 @@ const userSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category"
       }
-    ]
+    ],
+    resetPasswordToken: {
+      type: String
+    },
+    resetPasswordExpire: {
+      type: Date
+    }
   },
   {
     timestamps: true

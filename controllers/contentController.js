@@ -22,16 +22,85 @@ const getContent = async (req, res) => {
       filter.contentType = req.query.contentType;
     }
 
+    if (req.query.genre) {
+      filter.genre = { $regex: req.query.genre, $options: "i" };
+    }
+
+    if (req.query.year) {
+      const yearNumber = parseInt(req.query.year, 10);
+      if (isNaN(yearNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid year format"
+        });
+      }
+      const startDate = new Date(Date.UTC(yearNumber, 0, 1));
+      const endDate = new Date(Date.UTC(yearNumber + 1, 0, 1));
+      filter.releaseDate = { $gte: startDate, $lt: endDate };
+    }
+
     if (req.query.search) {
       filter.title = { $regex: req.query.search, $options: "i" };
     }
 
-    const contentList = await Content.find(filter).populate("category", "name slug");
+    let sortOptions = {};
+
+    if (req.query.sortBy) {
+      const allowedSortBy = ["latest", "popular", "alphabetical"];
+      if (!allowedSortBy.includes(req.query.sortBy)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid sortBy option. Allowed options: ${allowedSortBy.join(", ")}`
+        });
+      }
+
+      if (req.query.sortBy === "latest") {
+        sortOptions = { releaseDate: -1, createdAt: -1 };
+      } else if (req.query.sortBy === "popular") {
+        sortOptions = { popularityScore: -1, viewCount: -1 };
+      } else if (req.query.sortBy === "alphabetical") {
+        sortOptions = { title: 1 };
+      }
+    }
+
+    const contentList = await Content.find(filter)
+      .sort(sortOptions)
+      .populate("category", "name slug");
+
+    const contentIds = contentList.map((c) => c._id);
+    const ratingStats = await Rating.aggregate([
+      { $match: { content: { $in: contentIds } } },
+      {
+        $group: {
+          _id: "$content",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const ratingMap = {};
+    ratingStats.forEach((stat) => {
+      ratingMap[stat._id.toString()] = {
+        averageRating: Math.round(stat.averageRating * 10) / 10,
+        totalRatings: stat.totalRatings
+      };
+    });
+
+    const contentWithRatings = contentList.map((item) => {
+      const itemObj = item.toObject();
+      const stats = ratingMap[item._id.toString()] || { averageRating: 0, totalRatings: 0 };
+      return {
+        ...itemObj,
+        averageRating: stats.averageRating,
+        totalRatings: stats.totalRatings
+      };
+    });
 
     return res.status(200).json({
       success: true,
-      count: contentList.length,
-      content: contentList
+      count: contentWithRatings.length,
+      content: contentWithRatings
     });
   } catch (error) {
     return res.status(500).json({
@@ -58,9 +127,33 @@ const getContentById = async (req, res) => {
       });
     }
 
+    const ratingStats = await Rating.aggregate([
+      { $match: { content: content._id } },
+      {
+        $group: {
+          _id: "$content",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const stats = ratingStats.length > 0
+      ? {
+          averageRating: Math.round(ratingStats[0].averageRating * 10) / 10,
+          totalRatings: ratingStats[0].totalRatings
+        }
+      : { averageRating: 0, totalRatings: 0 };
+
+    const contentWithRatings = {
+      ...content.toObject(),
+      averageRating: stats.averageRating,
+      totalRatings: stats.totalRatings
+    };
+
     return res.status(200).json({
       success: true,
-      content: content
+      content: contentWithRatings
     });
   } catch (error) {
     return res.status(500).json({

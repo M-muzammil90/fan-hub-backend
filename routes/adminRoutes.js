@@ -12,16 +12,17 @@ const {
   updateFeedback,
   deleteFeedback
 } = require("../controllers/feedbackController");
+const { getAnalytics } = require("../controllers/adminController");
 const { protect } = require("../middleware/authMiddleware");
 const { admin } = require("../middleware/adminMiddleware");
 
-// Admin Fan Submission Management
+router.get("/analytics", protect, admin, getAnalytics);
+
 router.get("/fan-submissions", protect, admin, getAdminSubmissions);
 router.get("/fan-submissions/:id", protect, admin, getAdminSubmissionById);
 router.put("/fan-submissions/:id", protect, admin, updateAdminSubmission);
 router.delete("/fan-submissions/:id", protect, admin, deleteAdminSubmission);
 
-// Admin Feedback Management
 router.get("/feedback", protect, admin, getFeedback);
 router.get("/feedback/:id", protect, admin, getFeedbackById);
 router.put("/feedback/:id", protect, admin, updateFeedback);

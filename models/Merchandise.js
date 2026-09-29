@@ -29,6 +29,14 @@ const merchandiseSchema = new mongoose.Schema(
         type: String
       }
     ],
+    imagesData: [
+      {
+        url: { type: String, default: "" },
+        publicId: { type: String, default: "" },
+        resourceType: { type: String, default: "image" },
+        originalName: { type: String, default: "" }
+      }
+    ],
     tag: [
       {
         type: String,

@@ -2,19 +2,34 @@ const express = require("express");
 const router = express.Router();
 const {
   getEvents,
-  getEventById,
+  getUpcomingEvents,
+  getFeaturedEvents,
+  getNearbyEvents,
+  getCalendarEvents,
+  getEventBySlugOrId,
   createEvent,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  togglePublishEvent,
+  toggleFeatureEvent
 } = require("../controllers/eventController");
 const { protect } = require("../middleware/authMiddleware");
 const { admin } = require("../middleware/adminMiddleware");
+const { uploadSingle } = require("../middleware/upload.middleware");
 
+// Public routes (Sub-routes must precede /:id)
 router.get("/", getEvents);
-router.get("/:id", getEventById);
-router.post("/", protect, admin, createEvent);
-router.put("/:id", protect, admin, updateEvent);
+router.get("/upcoming", getUpcomingEvents);
+router.get("/featured", getFeaturedEvents);
+router.get("/nearby", getNearbyEvents);
+router.get("/calendar", getCalendarEvents);
+router.get("/:id", getEventBySlugOrId);
+
+// Admin protected routes
+router.post("/", protect, admin, uploadSingle("image"), createEvent);
+router.put("/:id", protect, admin, uploadSingle("image"), updateEvent);
 router.delete("/:id", protect, admin, deleteEvent);
+router.patch("/:id/publish", protect, admin, togglePublishEvent);
+router.patch("/:id/feature", protect, admin, toggleFeatureEvent);
 
 module.exports = router;
-

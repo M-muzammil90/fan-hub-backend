@@ -5,15 +5,11 @@ const Character = require("../models/Character");
 const Merchandise = require("../models/Merchandise");
 const Event = require("../models/Event");
 const FanSubmission = require("../models/FanSubmission");
+const cloudinaryService = require("../services/cloudinary.service");
 
 const getCategories = async (req, res) => {
   try {
-    const filter = {};
-    if (req.query.all !== "true") {
-      filter.isActive = true;
-    }
-
-    const categories = await Category.find(filter);
+    const categories = await Category.find().sort({ name: 1 });
     return res.status(200).json({
       success: true,
       count: categories.length,
@@ -29,14 +25,15 @@ const getCategories = async (req, res) => {
 
 const getCategoryById = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid category ID format"
       });
     }
 
-    const category = await Category.findById(req.params.id);
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({
         success: false,
@@ -57,6 +54,7 @@ const getCategoryById = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { name, slug, description, image, isActive } = req.body;
 
@@ -86,11 +84,23 @@ const createCategory = async (req, res) => {
       });
     }
 
+    let finalImageUrl = image || "";
+    let finalImagePublicId = "";
+
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/categories"
+      });
+      finalImageUrl = uploadedAsset.url;
+      finalImagePublicId = uploadedAsset.publicId;
+    }
+
     const category = await Category.create({
       name: trimmedName,
       slug: normalizedSlug,
       description: description ? description.trim() : "",
-      image: image || "",
+      image: finalImageUrl,
+      imagePublicId: finalImagePublicId,
       isActive: isActive !== undefined ? Boolean(isActive) : true
     });
 
@@ -100,6 +110,9 @@ const createCategory = async (req, res) => {
       category: category
     });
   } catch (error) {
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -108,12 +121,13 @@ const createCategory = async (req, res) => {
     }
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
 
 const updateCategory = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -132,6 +146,7 @@ const updateCategory = async (req, res) => {
     }
 
     const { name, slug, description, image, isActive } = req.body;
+    let oldImagePublicId = category.imagePublicId || cloudinaryService.extractPublicId(category.image)?.publicId;
 
     if (name !== undefined) {
       if (!name || !name.trim()) {
@@ -177,8 +192,17 @@ const updateCategory = async (req, res) => {
       category.description = description.trim();
     }
 
-    if (image !== undefined) {
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/categories"
+      });
+      category.image = uploadedAsset.url;
+      category.imagePublicId = uploadedAsset.publicId;
+    } else if (image !== undefined) {
       category.image = image;
+      if (category.image !== uploadedAsset?.url) {
+        category.imagePublicId = "";
+      }
     }
 
     if (isActive !== undefined) {
@@ -187,12 +211,20 @@ const updateCategory = async (req, res) => {
 
     await category.save();
 
+    // Clean up old Cloudinary asset if replaced
+    if (uploadedAsset && oldImagePublicId && oldImagePublicId !== uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(oldImagePublicId, "image");
+    }
+
     return res.status(200).json({
       success: true,
       message: "Category updated successfully",
       category: category
     });
   } catch (error) {
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -201,7 +233,7 @@ const updateCategory = async (req, res) => {
     }
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -224,20 +256,19 @@ const deleteCategory = async (req, res) => {
       });
     }
 
-    const [contentCount, characterCount, merchCount, eventCount, fanSubCount] = await Promise.all([
-      Content.countDocuments({ category: id }),
-      Character.countDocuments({ category: id }),
-      Merchandise.countDocuments({ category: id }),
-      Event.countDocuments({ category: id }),
-      FanSubmission.countDocuments({ category: id })
+    // Clean up or unset dependent category references
+    await Promise.all([
+      Content.updateMany({ category: id }, { $unset: { category: 1 } }),
+      Character.updateMany({ category: id }, { $unset: { category: 1 } }),
+      Merchandise.updateMany({ category: id }, { $unset: { category: 1 } }),
+      Event.updateMany({ category: id }, { $unset: { category: 1 } }),
+      FanSubmission.updateMany({ category: id }, { $unset: { category: 1 } })
     ]);
 
-    const totalReferences = contentCount + characterCount + merchCount + eventCount + fanSubCount;
-    if (totalReferences > 0) {
-      return res.status(409).json({
-        success: false,
-        message: `Cannot delete category: referenced by ${totalReferences} dependent item(s)`
-      });
+    // Clean up Cloudinary asset
+    const imagePublicId = category.imagePublicId || cloudinaryService.extractPublicId(category.image)?.publicId;
+    if (imagePublicId) {
+      await cloudinaryService.deleteFile(imagePublicId, "image");
     }
 
     await Category.findByIdAndDelete(id);
@@ -261,4 +292,3 @@ module.exports = {
   updateCategory,
   deleteCategory
 };
-

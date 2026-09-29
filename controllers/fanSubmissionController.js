@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const FanSubmission = require("../models/FanSubmission");
 const Category = require("../models/Category");
+const cloudinaryService = require("../services/cloudinary.service");
 
 // PUBLIC: Get approved submissions only
 const getPublicSubmissions = async (req, res) => {
@@ -42,6 +43,7 @@ const getPublicSubmissionById = async (req, res) => {
 
 // USER: Create a new fan submission
 const createSubmission = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { title, description, content, category, image } = req.body;
 
@@ -61,6 +63,17 @@ const createSubmission = async (req, res) => {
       return res.status(404).json({ success: false, message: "Referenced category not found" });
     }
 
+    let finalImageUrl = image || "";
+    let finalImagePublicId = "";
+
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/fan-submissions"
+      });
+      finalImageUrl = uploadedAsset.url;
+      finalImagePublicId = uploadedAsset.publicId;
+    }
+
     // User ID always comes from the JWT — never from the request body
     const newSubmission = await FanSubmission.create({
       user: req.user.id,
@@ -68,9 +81,9 @@ const createSubmission = async (req, res) => {
       description: description ? description.trim() : "",
       content: content.trim(),
       category,
-      image: image || "",
+      image: finalImageUrl,
+      imagePublicId: finalImagePublicId,
       status: "pending" // Always starts as pending
-      // adminNote is NOT accepted from the user
     });
 
     const populated = await FanSubmission.findById(newSubmission._id)
@@ -83,6 +96,9 @@ const createSubmission = async (req, res) => {
       submission: populated
     });
   } catch (error) {
+    if (uploadedAsset?.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -191,6 +207,11 @@ const deleteAdminSubmission = async (req, res) => {
     const submission = await FanSubmission.findById(id);
     if (!submission) {
       return res.status(404).json({ success: false, message: "Fan submission not found" });
+    }
+
+    const publicId = submission.imagePublicId || cloudinaryService.extractPublicId(submission.image);
+    if (publicId) {
+      await cloudinaryService.deleteFile(publicId, "image");
     }
 
     await FanSubmission.findByIdAndDelete(id);

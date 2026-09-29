@@ -24,10 +24,36 @@ const eventSchema = new mongoose.Schema(
       ref: "Category",
       required: [true, "Event must belong to a category"]
     },
-    city: {
+    eventType: {
       type: String,
-      required: [true, "City is required"],
-      trim: true
+      enum: [
+        "Convention",
+        "Meetup",
+        "Screening",
+        "Premiere",
+        "Release",
+        "Gaming Event",
+        "Cosplay Event",
+        "Fan Gathering"
+      ],
+      default: "Convention"
+    },
+    startDate: {
+      type: Date,
+      required: [true, "Event start date is required"]
+    },
+    endDate: {
+      type: Date
+    },
+    startTime: {
+      type: String,
+      trim: true,
+      default: "06:00 PM"
+    },
+    endTime: {
+      type: String,
+      trim: true,
+      default: "10:00 PM"
     },
     venue: {
       type: String,
@@ -39,38 +65,69 @@ const eventSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    city: {
+      type: String,
+      required: [true, "City is required"],
+      trim: true
+    },
     latitude: {
       type: Number
     },
     longitude: {
       type: Number
     },
-    startDate: {
-      type: Date,
-      required: [true, "Event start date is required"]
+    organizer: {
+      type: String,
+      trim: true,
+      default: "FanHub Community"
     },
-    endDate: {
-      type: Date
+    ticketUrl: {
+      type: String,
+      trim: true,
+      default: ""
     },
     image: {
       type: String,
       default: ""
     },
-    ticketUrl: {
+    imagePublicId: {
       type: String,
       default: ""
+    },
+    status: {
+      type: String,
+      enum: ["Upcoming", "Ongoing", "Completed", "Cancelled"],
+      default: "Upcoming"
     },
     isFeatured: {
       type: Boolean,
       default: false
+    },
+    isPublished: {
+      type: Boolean,
+      default: true
+    },
+    viewCount: {
+      type: Number,
+      default: 0
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
+eventSchema.virtual("coverImage").get(function () {
+  return this.image;
+});
+
 eventSchema.index({ city: 1 });
+eventSchema.index({ eventType: 1 });
+eventSchema.index({ status: 1 });
 eventSchema.index({ startDate: 1 });
+eventSchema.index({ isFeatured: 1 });
+eventSchema.index({ isPublished: 1 });
 
 module.exports = mongoose.model("Event", eventSchema);

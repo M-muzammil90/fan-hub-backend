@@ -3,6 +3,7 @@ const Content = require("../models/Content");
 const Category = require("../models/Category");
 const Bookmark = require("../models/Bookmark");
 const Rating = require("../models/Rating");
+const cloudinaryService = require("../services/cloudinary.service");
 
 const getContent = async (req, res) => {
   try {
@@ -69,7 +70,7 @@ const getContent = async (req, res) => {
 
     const contentIds = contentList.map((c) => c._id);
     const ratingStats = await Rating.aggregate([
-      { $match: { content: { $in: contentIds } } },
+      { $match: { content: { $in: contentIds }, $or: [{ status: "approved" }, { status: { $exists: false } }] } },
       {
         $group: {
           _id: "$content",
@@ -128,7 +129,7 @@ const getContentById = async (req, res) => {
     }
 
     const ratingStats = await Rating.aggregate([
-      { $match: { content: content._id } },
+      { $match: { content: content._id, $or: [{ status: "approved" }, { status: { $exists: false } }] } },
       {
         $group: {
           _id: "$content",
@@ -145,10 +146,19 @@ const getContentById = async (req, res) => {
         }
       : { averageRating: 0, totalRatings: 0 };
 
+    const approvedReviews = await Rating.find({
+      content: content._id,
+      $or: [{ status: "approved" }, { status: { $exists: false } }]
+    })
+      .populate("user", "name avatar")
+      .sort({ createdAt: -1 })
+      .limit(20);
+
     const contentWithRatings = {
       ...content.toObject(),
       averageRating: stats.averageRating,
-      totalRatings: stats.totalRatings
+      totalRatings: stats.totalRatings,
+      reviews: approvedReviews
     };
 
     return res.status(200).json({
@@ -164,6 +174,8 @@ const getContentById = async (req, res) => {
 };
 
 const createContent = async (req, res) => {
+  let uploadedThumbnailAsset = null;
+  let uploadedMediaAsset = null;
   try {
     const {
       title,
@@ -220,18 +232,63 @@ const createContent = async (req, res) => {
       });
     }
 
+    let parsedGenre = genre;
+    if (typeof genre === "string") {
+      try {
+        parsedGenre = JSON.parse(genre);
+      } catch (e) {
+        parsedGenre = genre.split(",").map((g) => g.trim()).filter(Boolean);
+      }
+    }
+
+    let parsedTags = tags;
+    if (typeof tags === "string") {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch (e) {
+        parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      }
+    }
+
+    let finalThumbnailUrl = thumbnail || "";
+    let finalThumbnailPublicId = "";
+    let finalMediaUrl = mediaUrl || "";
+    let finalMediaPublicId = "";
+    let finalMediaResourceType = "";
+
+    if (req.files?.thumbnail?.[0]) {
+      uploadedThumbnailAsset = await cloudinaryService.uploadImage(req.files.thumbnail[0], {
+        folder: "fan-hub-plus/content/thumbnails"
+      });
+      finalThumbnailUrl = uploadedThumbnailAsset.url;
+      finalThumbnailPublicId = uploadedThumbnailAsset.publicId;
+    }
+
+    const mediaFile = req.files?.media?.[0] || req.files?.mediaUrl?.[0];
+    if (mediaFile) {
+      uploadedMediaAsset = await cloudinaryService.uploadFile(mediaFile, {
+        folder: "fan-hub-plus/content/media"
+      });
+      finalMediaUrl = uploadedMediaAsset.url;
+      finalMediaPublicId = uploadedMediaAsset.publicId;
+      finalMediaResourceType = uploadedMediaAsset.resourceType;
+    }
+
     const newContent = await Content.create({
       title: title.trim(),
       slug: normalizedSlug,
       description: description ? description.trim() : "",
       category,
       contentType,
-      genre: Array.isArray(genre) ? genre : [],
+      genre: Array.isArray(parsedGenre) ? parsedGenre : [],
       releaseDate: releaseDate ? new Date(releaseDate) : undefined,
       popularityScore: popularityScore !== undefined ? Number(popularityScore) : 0,
-      thumbnail: thumbnail || "",
-      mediaUrl: mediaUrl || "",
-      tags: Array.isArray(tags) ? tags : [],
+      thumbnail: finalThumbnailUrl,
+      thumbnailPublicId: finalThumbnailPublicId,
+      mediaUrl: finalMediaUrl,
+      mediaPublicId: finalMediaPublicId,
+      mediaResourceType: finalMediaResourceType,
+      tags: Array.isArray(parsedTags) ? parsedTags : [],
       isFeatured: isFeatured !== undefined ? Boolean(isFeatured) : false,
       viewCount: viewCount !== undefined ? Number(viewCount) : 0
     });
@@ -244,6 +301,12 @@ const createContent = async (req, res) => {
       content: populatedContent
     });
   } catch (error) {
+    if (uploadedThumbnailAsset?.publicId) {
+      await cloudinaryService.deleteFile(uploadedThumbnailAsset.publicId, "image");
+    }
+    if (uploadedMediaAsset?.publicId) {
+      await cloudinaryService.deleteFile(uploadedMediaAsset.publicId, uploadedMediaAsset.resourceType);
+    }
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -258,6 +321,8 @@ const createContent = async (req, res) => {
 };
 
 const updateContent = async (req, res) => {
+  let uploadedThumbnailAsset = null;
+  let uploadedMediaAsset = null;
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -350,16 +415,78 @@ const updateContent = async (req, res) => {
     }
 
     if (description !== undefined) content.description = description.trim();
-    if (genre !== undefined) content.genre = Array.isArray(genre) ? genre : [];
+
+    if (genre !== undefined) {
+      let parsedGenre = genre;
+      if (typeof genre === "string") {
+        try {
+          parsedGenre = JSON.parse(genre);
+        } catch (e) {
+          parsedGenre = genre.split(",").map((g) => g.trim()).filter(Boolean);
+        }
+      }
+      content.genre = Array.isArray(parsedGenre) ? parsedGenre : [];
+    }
+
+    if (tags !== undefined) {
+      let parsedTags = tags;
+      if (typeof tags === "string") {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch (e) {
+          parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+        }
+      }
+      content.tags = Array.isArray(parsedTags) ? parsedTags : [];
+    }
+
     if (releaseDate !== undefined) content.releaseDate = releaseDate ? new Date(releaseDate) : null;
     if (popularityScore !== undefined) content.popularityScore = Number(popularityScore);
-    if (thumbnail !== undefined) content.thumbnail = thumbnail;
-    if (mediaUrl !== undefined) content.mediaUrl = mediaUrl;
-    if (tags !== undefined) content.tags = Array.isArray(tags) ? tags : [];
     if (isFeatured !== undefined) content.isFeatured = Boolean(isFeatured);
     if (viewCount !== undefined) content.viewCount = Number(viewCount);
 
+    let oldThumbnailPublicIdToDelete = null;
+    if (req.files?.thumbnail?.[0]) {
+      uploadedThumbnailAsset = await cloudinaryService.uploadImage(req.files.thumbnail[0], {
+        folder: "fan-hub-plus/content/thumbnails"
+      });
+      oldThumbnailPublicIdToDelete = content.thumbnailPublicId || cloudinaryService.extractPublicId(content.thumbnail);
+      content.thumbnail = uploadedThumbnailAsset.url;
+      content.thumbnailPublicId = uploadedThumbnailAsset.publicId;
+    } else if (thumbnail !== undefined) {
+      content.thumbnail = thumbnail;
+      if (thumbnail !== content.thumbnail) {
+        content.thumbnailPublicId = "";
+      }
+    }
+
+    let oldMediaPublicIdToDelete = null;
+    let oldMediaResourceType = content.mediaResourceType || "video";
+    const mediaFile = req.files?.media?.[0] || req.files?.mediaUrl?.[0];
+    if (mediaFile) {
+      uploadedMediaAsset = await cloudinaryService.uploadFile(mediaFile, {
+        folder: "fan-hub-plus/content/media"
+      });
+      oldMediaPublicIdToDelete = content.mediaPublicId || cloudinaryService.extractPublicId(content.mediaUrl);
+      content.mediaUrl = uploadedMediaAsset.url;
+      content.mediaPublicId = uploadedMediaAsset.publicId;
+      content.mediaResourceType = uploadedMediaAsset.resourceType;
+    } else if (mediaUrl !== undefined) {
+      content.mediaUrl = mediaUrl;
+      if (mediaUrl !== content.mediaUrl) {
+        content.mediaPublicId = "";
+        content.mediaResourceType = "";
+      }
+    }
+
     await content.save();
+
+    if (oldThumbnailPublicIdToDelete) {
+      await cloudinaryService.deleteFile(oldThumbnailPublicIdToDelete, "image");
+    }
+    if (oldMediaPublicIdToDelete) {
+      await cloudinaryService.deleteFile(oldMediaPublicIdToDelete, oldMediaResourceType);
+    }
 
     const updatedContent = await Content.findById(id).populate("category", "name slug");
 
@@ -369,6 +496,12 @@ const updateContent = async (req, res) => {
       content: updatedContent
     });
   } catch (error) {
+    if (uploadedThumbnailAsset?.publicId) {
+      await cloudinaryService.deleteFile(uploadedThumbnailAsset.publicId, "image");
+    }
+    if (uploadedMediaAsset?.publicId) {
+      await cloudinaryService.deleteFile(uploadedMediaAsset.publicId, uploadedMediaAsset.resourceType);
+    }
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -398,6 +531,16 @@ const deleteContent = async (req, res) => {
         success: false,
         message: "Content not found"
       });
+    }
+
+    const thumbnailPid = content.thumbnailPublicId || cloudinaryService.extractPublicId(content.thumbnail);
+    const mediaPid = content.mediaPublicId || cloudinaryService.extractPublicId(content.mediaUrl);
+
+    if (thumbnailPid) {
+      await cloudinaryService.deleteFile(thumbnailPid, "image");
+    }
+    if (mediaPid) {
+      await cloudinaryService.deleteFile(mediaPid, content.mediaResourceType || "video");
     }
 
     await Promise.all([

@@ -46,7 +46,19 @@ const contentSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    thumbnailPublicId: {
+      type: String,
+      default: ""
+    },
     mediaUrl: {
+      type: String,
+      default: ""
+    },
+    mediaPublicId: {
+      type: String,
+      default: ""
+    },
+    mediaResourceType: {
       type: String,
       default: ""
     },

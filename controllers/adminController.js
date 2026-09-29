@@ -8,6 +8,9 @@ const FanSubmission = require("../models/FanSubmission");
 const Rating = require("../models/Rating");
 const Bookmark = require("../models/Bookmark");
 const Feedback = require("../models/Feedback");
+const Series = require("../models/Series");
+const Season = require("../models/Season");
+const Episode = require("../models/Episode");
 
 const getAnalytics = async (req, res) => {
   try {
@@ -24,7 +27,10 @@ const getAnalytics = async (req, res) => {
       pendingSubmissions,
       totalRatings,
       totalBookmarks,
-      totalFeedback
+      totalFeedback,
+      totalSeries,
+      totalSeasons,
+      totalEpisodes
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: "user" }),
@@ -38,7 +44,18 @@ const getAnalytics = async (req, res) => {
       FanSubmission.countDocuments({ status: "pending" }),
       Rating.countDocuments(),
       Bookmark.countDocuments(),
-      Feedback.countDocuments()
+      Feedback.countDocuments(),
+      Series.countDocuments(),
+      Season.countDocuments(),
+      Episode.countDocuments()
+    ]);
+
+    const [contentByType, adminUsers] = await Promise.all([
+      Content.aggregate([
+        { $group: { _id: "$contentType", count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]),
+      User.countDocuments({ role: "admin" })
     ]);
 
     const popularCategories = await Content.aggregate([
@@ -78,11 +95,13 @@ const getAnalytics = async (req, res) => {
       analytics: {
         users: {
           totalUsers,
-          activeUsers
+          activeUsers,
+          adminUsers
         },
         content: {
           totalContent,
-          featuredContent
+          featuredContent,
+          byType: contentByType || []
         },
         popularCategories: popularCategories || [],
         activity: {
@@ -94,14 +113,18 @@ const getAnalytics = async (req, res) => {
           pendingSubmissions,
           totalRatings,
           totalBookmarks,
-          totalFeedback
+          totalFeedback,
+          totalSeries,
+          totalSeasons,
+          totalEpisodes
         }
       }
     });
   } catch (error) {
+    console.error("Error in getAnalytics:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };

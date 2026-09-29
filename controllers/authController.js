@@ -51,20 +51,28 @@ const registerUser = async (req, res) => {
       role: "user"
     });
 
+    const token = jwt.sign(
+      { id: newUser._id, role: newUser.role },
+      process.env.JWT_SECRET || "fanhubplus_secret_key_2026",
+      { expiresIn: "7d" }
+    );
+
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token: token,
       user: {
         id: newUser._id,
         name: newUser.name,
         email: newUser.email,
-        role: newUser.role
+        role: newUser.role,
+        avatar: newUser.avatar || ""
       }
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -100,7 +108,7 @@ const loginUser = async (req, res) => {
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "fanhubplus_secret_key_2026",
       { expiresIn: "7d" }
     );
 
@@ -112,13 +120,15 @@ const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        avatar: user.avatar || "",
+        favoriteCategories: user.favoriteCategories || []
       }
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -175,7 +185,7 @@ const forgotPassword = async (req, res) => {
       user.resetPasswordExpire = expireDate;
       await user.save();
 
-      const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+      const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
       const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`;
 
       const transporter = nodemailer.createTransport({
@@ -213,9 +223,8 @@ const forgotPassword = async (req, res) => {
       try {
         await transporter.sendMail(mailOptions);
       } catch (mailError) {
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
-        await user.save();
+        console.error("Password reset email failed:", mailError.message);
+        console.log("Password reset link (email not delivered):", resetUrl);
       }
     }
 

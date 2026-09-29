@@ -15,6 +15,11 @@ const adminRoutes = require("./routes/adminRoutes");
 const bookmarkRoutes = require("./routes/bookmarkRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
+const mediaRoutes = require("./routes/mediaRoutes");
+const seriesRoutes = require("./routes/seriesRoutes");
+const seasonRoutes = require("./routes/seasonRoutes");
+const episodeRoutes = require("./routes/episodeRoutes");
+const watchHistoryRoutes = require("./routes/watchHistoryRoutes");
 
 const app = express();
 app.use(cors());
@@ -32,6 +37,11 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/media", mediaRoutes);
+app.use("/api/series", seriesRoutes);
+app.use("/api/seasons", seasonRoutes);
+app.use("/api/episodes", episodeRoutes);
+app.use("/api/watch-history", watchHistoryRoutes);
 
 app.get("/", (req, res) => {
   res.json({

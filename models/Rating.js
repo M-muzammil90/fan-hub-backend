@@ -17,6 +17,16 @@ const ratingSchema = new mongoose.Schema(
       required: [true, "Rating score is required"],
       min: [1, "Rating must be at least 1"],
       max: [5, "Rating cannot exceed 5"]
+    },
+    review: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
     }
   },
   {

@@ -24,6 +24,10 @@ const categorySchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    imagePublicId: {
+      type: String,
+      default: ""
+    },
     isActive: {
       type: Boolean,
       default: true

@@ -118,24 +118,19 @@ const createFeedback = async (req, res) => {
   try {
     const { type, message } = req.body;
 
-    if (!type || !message || !message.trim()) {
-      return res.status(400).json({ success: false, message: "Feedback type and message are required" });
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: "Feedback message is required" });
     }
 
     const allowedTypes = ["bug", "suggestion", "query"];
-    if (!allowedTypes.includes(type)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid feedback type. Allowed: bug, suggestion, query"
-      });
-    }
+    const normalizedType = allowedTypes.includes(type) ? type : "query";
 
     // User ID from JWT. If user is not logged in, user is null
     const userId = req.user ? req.user.id : null;
 
     const feedback = await Feedback.create({
       user: userId,
-      type,
+      type: normalizedType,
       message: message.trim(),
       status: "pending" // Always starts as pending
     });

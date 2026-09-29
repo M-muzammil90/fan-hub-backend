@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Category = require("../models/Category");
+const cloudinaryService = require("../services/cloudinary.service");
 
 const getUsers = async (req, res) => {
   try {
@@ -11,6 +12,7 @@ const getUsers = async (req, res) => {
       email: u.email,
       role: u.role,
       avatar: u.avatar,
+      avatarPublicId: u.avatarPublicId || "",
       favoriteCategories: u.favoriteCategories,
       createdAt: u.createdAt
     }));
@@ -53,6 +55,7 @@ const getUserById = async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        avatarPublicId: user.avatarPublicId || "",
         favoriteCategories: user.favoriteCategories,
         createdAt: user.createdAt
       }
@@ -66,6 +69,7 @@ const getUserById = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -84,6 +88,7 @@ const updateUser = async (req, res) => {
     }
 
     const { name, email, avatar, role, favoriteCategories } = req.body;
+    let oldAvatarPublicId = user.avatarPublicId || cloudinaryService.extractPublicId(user.avatar)?.publicId;
 
     if (name !== undefined) {
       if (!name || !name.trim()) {
@@ -117,8 +122,18 @@ const updateUser = async (req, res) => {
       }
     }
 
-    if (avatar !== undefined) {
-      user.avatar = avatar;
+    // Handle avatar file upload via Multer to Cloudinary
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/users/avatars"
+      });
+      user.avatar = uploadedAsset.url;
+      user.avatarPublicId = uploadedAsset.publicId;
+    } else if (avatar !== undefined) {
+      user.avatar = typeof avatar === "string" ? avatar.trim() : avatar;
+      if (user.avatar !== uploadedAsset?.url) {
+        user.avatarPublicId = "";
+      }
     }
 
     if (role !== undefined) {
@@ -132,13 +147,22 @@ const updateUser = async (req, res) => {
     }
 
     if (favoriteCategories !== undefined) {
-      if (!Array.isArray(favoriteCategories)) {
+      let parsedCategories = favoriteCategories;
+      if (typeof favoriteCategories === "string") {
+        try {
+          parsedCategories = JSON.parse(favoriteCategories);
+        } catch (e) {
+          parsedCategories = [favoriteCategories];
+        }
+      }
+
+      if (!Array.isArray(parsedCategories)) {
         return res.status(400).json({
           success: false,
           message: "favoriteCategories must be an array of category IDs"
         });
       }
-      for (const catId of favoriteCategories) {
+      for (const catId of parsedCategories) {
         if (!mongoose.Types.ObjectId.isValid(catId)) {
           return res.status(400).json({
             success: false,
@@ -153,10 +177,15 @@ const updateUser = async (req, res) => {
           });
         }
       }
-      user.favoriteCategories = favoriteCategories;
+      user.favoriteCategories = parsedCategories;
     }
 
     await user.save();
+
+    // Successfully saved: delete old Cloudinary asset if replaced
+    if (uploadedAsset && oldAvatarPublicId && oldAvatarPublicId !== uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(oldAvatarPublicId, "image");
+    }
 
     const updatedUser = await User.findById(id).select("-password").populate("favoriteCategories", "name slug");
 
@@ -169,13 +198,18 @@ const updateUser = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         avatar: updatedUser.avatar,
+        avatarPublicId: updatedUser.avatarPublicId || "",
         favoriteCategories: updatedUser.favoriteCategories
       }
     });
   } catch (error) {
+    // Rollback: cleanup uploaded asset from Cloudinary if database save failed
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -205,6 +239,12 @@ const deleteUser = async (req, res) => {
       });
     }
 
+    // Clean up avatar from Cloudinary
+    const avatarPublicId = user.avatarPublicId || cloudinaryService.extractPublicId(user.avatar)?.publicId;
+    if (avatarPublicId) {
+      await cloudinaryService.deleteFile(avatarPublicId, "image");
+    }
+
     await User.findByIdAndDelete(id);
 
     return res.status(200).json({
@@ -220,6 +260,7 @@ const deleteUser = async (req, res) => {
 };
 
 const updateUserProfile = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const userId = req.user.id;
     const user = await User.findById(userId);
@@ -231,11 +272,12 @@ const updateUserProfile = async (req, res) => {
     }
 
     const { name, avatar, favoriteCategories } = req.body;
+    let oldAvatarPublicId = user.avatarPublicId || cloudinaryService.extractPublicId(user.avatar)?.publicId;
 
-    if (name === undefined && avatar === undefined && favoriteCategories === undefined) {
+    if (name === undefined && avatar === undefined && favoriteCategories === undefined && !req.file) {
       return res.status(400).json({
         success: false,
-        message: "At least one valid profile field (name, avatar, favoriteCategories) must be provided for update"
+        message: "At least one valid profile field (name, avatar, favoriteCategories) or file must be provided for update"
       });
     }
 
@@ -249,18 +291,37 @@ const updateUserProfile = async (req, res) => {
       user.name = name.trim();
     }
 
-    if (avatar !== undefined) {
+    // Handle avatar file upload via Multer to Cloudinary
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/users/avatars"
+      });
+      user.avatar = uploadedAsset.url;
+      user.avatarPublicId = uploadedAsset.publicId;
+    } else if (avatar !== undefined) {
       user.avatar = typeof avatar === "string" ? avatar.trim() : avatar;
+      if (user.avatar !== uploadedAsset?.url) {
+        user.avatarPublicId = "";
+      }
     }
 
     if (favoriteCategories !== undefined) {
-      if (!Array.isArray(favoriteCategories)) {
+      let parsedCategories = favoriteCategories;
+      if (typeof favoriteCategories === "string") {
+        try {
+          parsedCategories = JSON.parse(favoriteCategories);
+        } catch (e) {
+          parsedCategories = [favoriteCategories];
+        }
+      }
+
+      if (!Array.isArray(parsedCategories)) {
         return res.status(400).json({
           success: false,
           message: "favoriteCategories must be an array of category IDs"
         });
       }
-      for (const catId of favoriteCategories) {
+      for (const catId of parsedCategories) {
         if (!mongoose.Types.ObjectId.isValid(catId)) {
           return res.status(400).json({
             success: false,
@@ -275,10 +336,15 @@ const updateUserProfile = async (req, res) => {
           });
         }
       }
-      user.favoriteCategories = favoriteCategories;
+      user.favoriteCategories = parsedCategories;
     }
 
     await user.save();
+
+    // Successfully saved: delete old Cloudinary asset if replaced
+    if (uploadedAsset && oldAvatarPublicId && oldAvatarPublicId !== uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(oldAvatarPublicId, "image");
+    }
 
     const updatedUser = await User.findById(userId)
       .select("-password")
@@ -293,13 +359,18 @@ const updateUserProfile = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         avatar: updatedUser.avatar,
+        avatarPublicId: updatedUser.avatarPublicId || "",
         favoriteCategories: updatedUser.favoriteCategories
       }
     });
   } catch (error) {
+    // Rollback: cleanup uploaded asset from Cloudinary if database save failed
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -311,5 +382,3 @@ module.exports = {
   deleteUser,
   updateUserProfile
 };
-
-

@@ -23,6 +23,10 @@ const characterSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    imagePublicId: {
+      type: String,
+      default: ""
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

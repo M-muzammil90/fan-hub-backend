@@ -2,23 +2,37 @@ const mongoose = require("mongoose");
 const Character = require("../models/Character");
 const Category = require("../models/Category");
 const Content = require("../models/Content");
+const cloudinaryService = require("../services/cloudinary.service");
 
 const getCharacters = async (req, res) => {
   try {
     const filter = {};
+
     if (req.query.category) {
       if (!mongoose.Types.ObjectId.isValid(req.query.category)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid category ID format"
+          message: "Invalid category ID format in query"
         });
       }
       filter.category = req.query.category;
     }
 
+    if (req.query.tag) {
+      filter.tags = req.query.tag;
+    }
+
+    if (req.query.search) {
+      filter.$or = [
+        { name: { $regex: req.query.search, $options: "i" } },
+        { bio: { $regex: req.query.search, $options: "i" } }
+      ];
+    }
+
     const characters = await Character.find(filter)
       .populate("category", "name slug")
-      .populate("content", "title slug contentType");
+      .populate("content", "title slug contentType")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -35,14 +49,15 @@ const getCharacters = async (req, res) => {
 
 const getCharacterById = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid character ID format"
       });
     }
 
-    const character = await Character.findById(req.params.id)
+    const character = await Character.findById(id)
       .populate("category", "name slug")
       .populate("content", "title slug contentType");
 
@@ -66,6 +81,7 @@ const getCharacterById = async (req, res) => {
 };
 
 const createCharacter = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { name, slug, bio, image, category, content, tags } = req.body;
 
@@ -100,8 +116,27 @@ const createCharacter = async (req, res) => {
       });
     }
 
+    // Parse content and tags if coming from multipart form data as strings
+    let parsedContent = content;
+    if (typeof content === "string") {
+      try {
+        parsedContent = JSON.parse(content);
+      } catch (e) {
+        parsedContent = [content];
+      }
+    }
+
+    let parsedTags = tags;
+    if (typeof tags === "string") {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch (e) {
+        parsedTags = tags.split(",").map((t) => t.trim());
+      }
+    }
+
     // Validate content references if provided
-    const contentIds = Array.isArray(content) ? content : [];
+    const contentIds = Array.isArray(parsedContent) ? parsedContent : [];
     for (const contentId of contentIds) {
       if (!mongoose.Types.ObjectId.isValid(contentId)) {
         return res.status(400).json({
@@ -118,14 +153,26 @@ const createCharacter = async (req, res) => {
       }
     }
 
+    let finalImageUrl = image || "";
+    let finalImagePublicId = "";
+
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/characters"
+      });
+      finalImageUrl = uploadedAsset.url;
+      finalImagePublicId = uploadedAsset.publicId;
+    }
+
     const newCharacter = await Character.create({
       name: name.trim(),
       slug: normalizedSlug,
       bio: bio ? bio.trim() : "",
-      image: image || "",
+      image: finalImageUrl,
+      imagePublicId: finalImagePublicId,
       category,
       content: contentIds,
-      tags: Array.isArray(tags) ? tags : []
+      tags: Array.isArray(parsedTags) ? parsedTags : []
     });
 
     const populatedCharacter = await Character.findById(newCharacter._id)
@@ -138,6 +185,9 @@ const createCharacter = async (req, res) => {
       character: populatedCharacter
     });
   } catch (error) {
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -146,30 +196,26 @@ const createCharacter = async (req, res) => {
     }
     return res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error"
     });
   }
 };
 
 const updateCharacter = async (req, res) => {
+  let uploadedAsset = null;
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid character ID format"
-      });
+      return res.status(400).json({ success: false, message: "Invalid character ID format" });
     }
 
     const character = await Character.findById(id);
     if (!character) {
-      return res.status(404).json({
-        success: false,
-        message: "Character not found"
-      });
+      return res.status(404).json({ success: false, message: "Character not found" });
     }
 
     const { name, slug, bio, image, category, content, tags } = req.body;
+    let oldImagePublicId = character.imagePublicId || cloudinaryService.extractPublicId(character.image)?.publicId;
 
     if (name !== undefined) {
       if (!name || !name.trim()) {
@@ -204,7 +250,15 @@ const updateCharacter = async (req, res) => {
     }
 
     if (content !== undefined) {
-      const contentIds = Array.isArray(content) ? content : [];
+      let parsedContent = content;
+      if (typeof content === "string") {
+        try {
+          parsedContent = JSON.parse(content);
+        } catch (e) {
+          parsedContent = [content];
+        }
+      }
+      const contentIds = Array.isArray(parsedContent) ? parsedContent : [];
       for (const contentId of contentIds) {
         if (!mongoose.Types.ObjectId.isValid(contentId)) {
           return res.status(400).json({ success: false, message: `Invalid content ID: ${contentId}` });
@@ -218,10 +272,38 @@ const updateCharacter = async (req, res) => {
     }
 
     if (bio !== undefined) character.bio = bio.trim();
-    if (image !== undefined) character.image = image;
-    if (tags !== undefined) character.tags = Array.isArray(tags) ? tags : [];
+
+    if (req.file) {
+      uploadedAsset = await cloudinaryService.uploadImage(req.file, {
+        folder: "fan-hub-plus/characters"
+      });
+      character.image = uploadedAsset.url;
+      character.imagePublicId = uploadedAsset.publicId;
+    } else if (image !== undefined) {
+      character.image = image;
+      if (character.image !== uploadedAsset?.url) {
+        character.imagePublicId = "";
+      }
+    }
+
+    if (tags !== undefined) {
+      let parsedTags = tags;
+      if (typeof tags === "string") {
+        try {
+          parsedTags = JSON.parse(tags);
+        } catch (e) {
+          parsedTags = tags.split(",").map((t) => t.trim());
+        }
+      }
+      character.tags = Array.isArray(parsedTags) ? parsedTags : [];
+    }
 
     await character.save();
+
+    // Clean up old Cloudinary asset if replaced
+    if (uploadedAsset && oldImagePublicId && oldImagePublicId !== uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(oldImagePublicId, "image");
+    }
 
     const updatedCharacter = await Character.findById(id)
       .populate("category", "name slug")
@@ -233,10 +315,13 @@ const updateCharacter = async (req, res) => {
       character: updatedCharacter
     });
   } catch (error) {
+    if (uploadedAsset && uploadedAsset.publicId) {
+      await cloudinaryService.deleteFile(uploadedAsset.publicId, "image");
+    }
     if (error.code === 11000) {
       return res.status(409).json({ success: false, message: "Character slug already exists" });
     }
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -250,6 +335,11 @@ const deleteCharacter = async (req, res) => {
     const character = await Character.findById(id);
     if (!character) {
       return res.status(404).json({ success: false, message: "Character not found" });
+    }
+
+    const imagePublicId = character.imagePublicId || cloudinaryService.extractPublicId(character.image)?.publicId;
+    if (imagePublicId) {
+      await cloudinaryService.deleteFile(imagePublicId, "image");
     }
 
     await Character.findByIdAndDelete(id);
@@ -270,4 +360,3 @@ module.exports = {
   updateCharacter,
   deleteCharacter
 };
-

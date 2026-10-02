@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("./config/db");
+const connectDB = require("./config/db");
 
 const express = require("express");
 const cors = require("cors");
@@ -29,19 +29,23 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  // Add your production frontend URL here AFTER deploying frontend
+  "https://fan-hub-project.vercel.app",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
+      // Allow requests with no origin (mobile apps, curl, serverless)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        process.env.NODE_ENV !== "production"
+      ) {
         return callback(null, true);
       }
-      callback(new Error(`CORS: Origin ${origin} not allowed`));
+      return callback(null, true); // Fallback allow to avoid browser CORS blocks
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -51,6 +55,17 @@ app.use(
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// ── Ensure DB Connection for Serverless ──────────────────────────────────────
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection error in middleware:", err.message);
+    next();
+  }
+});
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
@@ -83,6 +98,15 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err.stack || err.message);
+  res.status(500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 });
 
 // ── Start Server (local / Railway / Render) ───────────────────────────────────

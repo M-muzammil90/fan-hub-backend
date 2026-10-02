@@ -13,7 +13,8 @@ const {
   togglePublishEvent,
   toggleFeatureEvent
 } = require("../controllers/eventController");
-const { protect } = require("../middleware/authMiddleware");
+const { createBooking, getEventBookings } = require("../controllers/bookingController");
+const { protect, optionalProtect } = require("../middleware/authMiddleware");
 const { admin } = require("../middleware/adminMiddleware");
 const { uploadSingle } = require("../middleware/upload.middleware");
 
@@ -25,6 +26,10 @@ router.get("/nearby", getNearbyEvents);
 router.get("/calendar", getCalendarEvents);
 router.get("/:id", getEventBySlugOrId);
 
+// Event Booking Routes
+router.post("/:eventId/bookings", optionalProtect, createBooking);
+router.get("/:eventId/bookings", protect, admin, getEventBookings);
+
 // Admin protected routes
 router.post("/", protect, admin, uploadSingle("image"), createEvent);
 router.put("/:id", protect, admin, uploadSingle("image"), updateEvent);
@@ -33,3 +38,4 @@ router.patch("/:id/publish", protect, admin, togglePublishEvent);
 router.patch("/:id/feature", protect, admin, toggleFeatureEvent);
 
 module.exports = router;
+

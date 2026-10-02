@@ -359,6 +359,10 @@ const createEvent = async (req, res) => {
       endTime,
       organizer,
       ticketUrl,
+      ticketPrice,
+      totalTickets,
+      availableTickets,
+      ticketTiers,
       eventType,
       status,
       isFeatured,
@@ -419,6 +423,19 @@ const createEvent = async (req, res) => {
       finalImagePublicId = uploadedAsset.publicId;
     }
 
+    const parsedTotalTickets = totalTickets !== undefined && totalTickets !== "" ? Number(totalTickets) : 100;
+    const parsedAvailableTickets = availableTickets !== undefined && availableTickets !== "" ? Number(availableTickets) : parsedTotalTickets;
+    const parsedTicketPrice = ticketPrice !== undefined && ticketPrice !== "" ? Number(ticketPrice) : 1500;
+
+    let parsedTicketTiers = undefined;
+    if (ticketTiers) {
+      try {
+        parsedTicketTiers = typeof ticketTiers === "string" ? JSON.parse(ticketTiers) : ticketTiers;
+      } catch (e) {
+        parsedTicketTiers = undefined;
+      }
+    }
+
     const newEvent = await Event.create({
       title: title.trim(),
       slug: normalizedSlug,
@@ -435,6 +452,10 @@ const createEvent = async (req, res) => {
       endTime: endTime ? endTime.trim() : "10:00 PM",
       organizer: organizer ? organizer.trim() : "FanHub Community",
       ticketUrl: ticketUrl ? ticketUrl.trim() : "",
+      ticketPrice: parsedTicketPrice,
+      totalTickets: parsedTotalTickets,
+      availableTickets: parsedAvailableTickets,
+      ticketTiers: parsedTicketTiers,
       eventType: eventType || "Convention",
       status: status || "Upcoming",
       image: finalImageUrl,
@@ -492,6 +513,10 @@ const updateEvent = async (req, res) => {
       endTime,
       organizer,
       ticketUrl,
+      ticketPrice,
+      totalTickets,
+      availableTickets,
+      ticketTiers,
       eventType,
       status,
       isFeatured,
@@ -530,6 +555,16 @@ const updateEvent = async (req, res) => {
     if (endTime !== undefined) event.endTime = endTime.trim();
     if (organizer !== undefined) event.organizer = organizer.trim();
     if (ticketUrl !== undefined) event.ticketUrl = ticketUrl.trim();
+    if (ticketPrice !== undefined && ticketPrice !== "") event.ticketPrice = Number(ticketPrice);
+    if (totalTickets !== undefined && totalTickets !== "") event.totalTickets = Number(totalTickets);
+    if (availableTickets !== undefined && availableTickets !== "") event.availableTickets = Number(availableTickets);
+    if (ticketTiers !== undefined) {
+      try {
+        event.ticketTiers = typeof ticketTiers === "string" ? JSON.parse(ticketTiers) : ticketTiers;
+      } catch (e) {
+        // ignore JSON parse error
+      }
+    }
     if (eventType !== undefined) event.eventType = eventType;
     if (status !== undefined) event.status = status;
     if (isFeatured !== undefined) event.isFeatured = isFeatured === true || isFeatured === "true";
@@ -665,7 +700,9 @@ const toggleFeatureEvent = async (req, res) => {
       return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    const isFeatured = req.body.isFeatured !== undefined ? Boolean(req.body.isFeatured) : !event.isFeatured;
+    const isFeatured = req.body.isFeatured !== undefined 
+      ? (req.body.isFeatured === true || req.body.isFeatured === "true" || req.body.isFeatured === 1 || req.body.isFeatured === "1") 
+      : !event.isFeatured;
     event.isFeatured = isFeatured;
     await event.save();
 

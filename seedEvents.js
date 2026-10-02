@@ -35,6 +35,14 @@ const seedEvents = async () => {
         longitude: 67.0782,
         organizer: 'FanHub Pakistan',
         ticketUrl: 'https://ticketbox.pk/event/demon-slayer-2026',
+        ticketPrice: 1500,
+        totalTickets: 250,
+        availableTickets: 185,
+        ticketTiers: [
+          { name: 'Standard Pass', price: 1500, description: 'Full 1-day convention access and stage seating', totalTickets: 150, availableTickets: 110 },
+          { name: 'VIP Pass', price: 3500, description: 'Front-row stage access, exclusive merch goodie bag, and fast-track entry', totalTickets: 75, availableTickets: 55 },
+          { name: 'Student Pass', price: 1000, description: 'Discounted admission with valid student ID card', totalTickets: 25, availableTickets: 20 }
+        ],
         image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: true,
@@ -57,6 +65,14 @@ const seedEvents = async () => {
         longitude: 67.0782,
         organizer: 'Otaku Guild Pakistan',
         ticketUrl: 'https://animeexpo.pk/passes',
+        ticketPrice: 2000,
+        totalTickets: 500,
+        availableTickets: 340,
+        ticketTiers: [
+          { name: 'Standard Pass', price: 2000, description: 'All-day summit access and manga workshops', totalTickets: 300, availableTickets: 200 },
+          { name: 'VIP Pass', price: 4500, description: 'VIP lounge, meet & greet photo passes, and collector badge', totalTickets: 150, availableTickets: 105 },
+          { name: 'Cosplayer Pass', price: 1200, description: 'Discounted rate for registered cosplay competition entrants', totalTickets: 50, availableTickets: 35 }
+        ],
         image: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: true,
@@ -79,6 +95,13 @@ const seedEvents = async () => {
         longitude: 74.3317,
         organizer: 'Lahore Anime Community',
         ticketUrl: 'https://alhamra.org.pk/events/jjk-meetup',
+        ticketPrice: 1200,
+        totalTickets: 150,
+        availableTickets: 98,
+        ticketTiers: [
+          { name: 'General Pass', price: 1200, description: 'Entry to screening and VR booth activities', totalTickets: 100, availableTickets: 65 },
+          { name: 'VIP Pass', price: 2800, description: 'Priority screening seats and exclusive Gojo/Sukuna art poster', totalTickets: 50, availableTickets: 33 }
+        ],
         image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: true,
@@ -101,6 +124,13 @@ const seedEvents = async () => {
         longitude: 73.0501,
         organizer: 'Grand Line Pakistan',
         ticketUrl: 'https://centaurus.com.pk/cinema',
+        ticketPrice: 1800,
+        totalTickets: 200,
+        availableTickets: 145,
+        ticketTiers: [
+          { name: 'IMAX Standard', price: 1800, description: 'IMAX screening ticket with complimentary popcorn combo', totalTickets: 150, availableTickets: 110 },
+          { name: 'Captain VIP', price: 3200, description: 'Recliner VIP seat and authentic Straw Hat crew metal coin', totalTickets: 50, availableTickets: 35 }
+        ],
         image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: false,
@@ -123,6 +153,13 @@ const seedEvents = async () => {
         longitude: 67.0945,
         organizer: 'CyberSports PK',
         ticketUrl: 'https://esports.pk/championship-2026',
+        ticketPrice: 1600,
+        totalTickets: 300,
+        availableTickets: 215,
+        ticketTiers: [
+          { name: 'Gamer Pass', price: 1600, description: 'Tournament spectator and Freeplay VR arcade access', totalTickets: 200, availableTickets: 145 },
+          { name: 'VIP Player Pass', price: 3000, description: 'Tournament bracket entry and dedicated high-refresh PC station', totalTickets: 100, availableTickets: 70 }
+        ],
         image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: true,
@@ -145,6 +182,13 @@ const seedEvents = async () => {
         longitude: 73.0768,
         organizer: 'Cosplay Guild PK',
         ticketUrl: 'https://cosplaygala.pk',
+        ticketPrice: 1400,
+        totalTickets: 180,
+        availableTickets: 120,
+        ticketTiers: [
+          { name: 'Gala Pass', price: 1400, description: 'Masquerade entry and synthwave concert', totalTickets: 120, availableTickets: 80 },
+          { name: 'VIP Cosplayer Pass', price: 2600, description: 'Dedicated dressing room, pro photo shoot, and VIP stage pass', totalTickets: 60, availableTickets: 40 }
+        ],
         image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80',
         status: 'Upcoming',
         isFeatured: false,

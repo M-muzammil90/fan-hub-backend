@@ -3,12 +3,14 @@ const FanSubmission = require("../models/FanSubmission");
 const Category = require("../models/Category");
 const cloudinaryService = require("../services/cloudinary.service");
 
-// PUBLIC: Get approved submissions only
+// PUBLIC: Get submissions (non-rejected by default, or specific status if requested)
 const getPublicSubmissions = async (req, res) => {
   try {
-    const submissions = await FanSubmission.find({ status: "approved" })
+    const filter = req.query.status ? { status: req.query.status } : { status: { $ne: "rejected" } };
+    const submissions = await FanSubmission.find(filter)
       .populate("user", "name avatar")
-      .populate("category", "name slug");
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,

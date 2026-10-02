@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getContent,
   getContentById,
+  getUpcomingContent,
   createContent,
   updateContent,
   deleteContent
@@ -18,10 +19,12 @@ const contentUpload = uploadFields([
 ]);
 
 router.get("/", getContent);
+router.get("/upcoming", getUpcomingContent);
 router.get("/:id", getContentById);
 router.post("/", protect, admin, contentUpload, createContent);
 router.put("/:id", protect, admin, contentUpload, updateContent);
 router.delete("/:id", protect, admin, deleteContent);
 
 module.exports = router;
+
 

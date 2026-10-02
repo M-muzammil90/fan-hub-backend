@@ -86,6 +86,30 @@ const eventSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    ticketPrice: {
+      type: Number,
+      default: 1500,
+      min: [0, "Ticket price cannot be negative"]
+    },
+    totalTickets: {
+      type: Number,
+      default: 100,
+      min: [0, "Total tickets cannot be negative"]
+    },
+    availableTickets: {
+      type: Number,
+      default: 100,
+      min: [0, "Available tickets cannot be negative"]
+    },
+    ticketTiers: [
+      {
+        name: { type: String, default: "General Pass", trim: true },
+        price: { type: Number, default: 1500, min: 0 },
+        description: { type: String, default: "Standard event entry and general stage access", trim: true },
+        totalTickets: { type: Number, default: 100, min: 0 },
+        availableTickets: { type: Number, default: 100, min: 0 }
+      }
+    ],
     image: {
       type: String,
       default: ""

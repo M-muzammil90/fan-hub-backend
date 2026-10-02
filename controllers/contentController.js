@@ -289,7 +289,7 @@ const createContent = async (req, res) => {
       mediaPublicId: finalMediaPublicId,
       mediaResourceType: finalMediaResourceType,
       tags: Array.isArray(parsedTags) ? parsedTags : [],
-      isFeatured: isFeatured !== undefined ? Boolean(isFeatured) : false,
+      isFeatured: isFeatured !== undefined ? (isFeatured === true || isFeatured === "true" || isFeatured === 1 || isFeatured === "1") : false,
       viewCount: viewCount !== undefined ? Number(viewCount) : 0
     });
 
@@ -442,7 +442,7 @@ const updateContent = async (req, res) => {
 
     if (releaseDate !== undefined) content.releaseDate = releaseDate ? new Date(releaseDate) : null;
     if (popularityScore !== undefined) content.popularityScore = Number(popularityScore);
-    if (isFeatured !== undefined) content.isFeatured = Boolean(isFeatured);
+    if (isFeatured !== undefined) content.isFeatured = (isFeatured === true || isFeatured === "true" || isFeatured === 1 || isFeatured === "1");
     if (viewCount !== undefined) content.viewCount = Number(viewCount);
 
     let oldThumbnailPublicIdToDelete = null;
@@ -561,11 +561,100 @@ const deleteContent = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/content/upcoming
+ * Fetch upcoming releases sorted by nearest release date first
+ */
+const getUpcomingContent = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 12;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // 1. Fetch content with releaseDate >= now sorted ascending (nearest date first)
+    let upcomingContent = await Content.find({
+      releaseDate: { $gte: now }
+    })
+      .populate("category", "name slug")
+      .sort({ releaseDate: 1 })
+      .limit(limit)
+      .lean();
+
+    // 2. Also check Series for upcoming items
+    const Series = require("../models/Series");
+    const upcomingSeries = await Series.find({
+      $or: [
+        { status: "upcoming" },
+        { releaseYear: { $gte: now.getFullYear() } }
+      ]
+    })
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const formattedSeries = upcomingSeries.map((s) => ({
+      _id: s._id,
+      title: s.title,
+      slug: s.slug,
+      category: s.category,
+      contentType: "series",
+      genre: s.genres || ["Series"],
+      releaseDate: s.createdAt,
+      releaseYear: s.releaseYear,
+      thumbnail: s.poster || s.backdrop,
+      backdrop: s.backdrop || s.poster,
+      description: s.description,
+      status: s.status || "upcoming",
+      isFeatured: s.isFeatured,
+      isSeries: true
+    }));
+
+    // Merge and deduplicate
+    let combined = [...upcomingContent, ...formattedSeries];
+
+    // If fewer than limit, also fetch any latest added content as fallback
+    if (combined.length === 0) {
+      const fallbackContent = await Content.find({})
+        .populate("category", "name slug")
+        .sort({ releaseDate: -1, createdAt: -1 })
+        .limit(limit)
+        .lean();
+      combined = fallbackContent;
+    }
+
+    // Deduplicate by ID
+    const seen = new Set();
+    const uniqueList = [];
+    for (const item of combined) {
+      const idStr = item._id.toString();
+      if (!seen.has(idStr)) {
+        seen.add(idStr);
+        uniqueList.push(item);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: uniqueList.length,
+      upcoming: uniqueList.slice(0, limit)
+    });
+  } catch (error) {
+    console.error("Error in getUpcomingContent:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = {
   getContent,
   getContentById,
+  getUpcomingContent,
   createContent,
   updateContent,
   deleteContent
 };
+
 

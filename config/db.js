@@ -22,13 +22,12 @@ const connectDB = async () => {
     return db;
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error.message);
-    if (!process.env.VERCEL) {
-      process.exit(1);
-    }
+    // Do NOT call process.exit(1) here — the per-request middleware will retry.
+    // Calling process.exit crashes the server even when MongoDB becomes available shortly after.
   }
 };
 
-// Initial connection
+// Initial connection attempt (non-fatal if it fails — per-request middleware retries)
 connectDB().catch((err) => console.error("Initial DB connect error:", err.message));
 
 module.exports = connectDB;

@@ -21,7 +21,7 @@ const seedUpcomingContent = [
     releaseDate: new Date('2026-10-05T00:00:00.000Z'),
     popularityScore: 98,
     thumbnail: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
-    mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     isFeatured: true,
     tags: ['Anime', 'Movie', 'Action']
   },
@@ -34,7 +34,7 @@ const seedUpcomingContent = [
     releaseDate: new Date('2026-10-12T00:00:00.000Z'),
     popularityScore: 99,
     thumbnail: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=800&auto=format&fit=crop&q=80',
-    mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     isFeatured: true,
     tags: ['Sci-Fi', 'Netflix', 'Series']
   },
@@ -47,7 +47,7 @@ const seedUpcomingContent = [
     releaseDate: new Date('2026-10-20T00:00:00.000Z'),
     popularityScore: 100,
     thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
-    mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     isFeatured: true,
     tags: ['Gaming', 'GTA', 'Trailer']
   }

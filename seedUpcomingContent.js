@@ -24,7 +24,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-10-05T00:00:00.000Z'),
         popularityScore: 98,
         thumbnail: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: true,
         tags: ['Anime', 'Movie', 'Action']
       },
@@ -38,7 +38,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-10-12T00:00:00.000Z'),
         popularityScore: 99,
         thumbnail: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: true,
         tags: ['Sci-Fi', 'Mystery', 'Blockbuster']
       },
@@ -52,7 +52,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-10-19T00:00:00.000Z'),
         popularityScore: 97,
         thumbnail: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: true,
         tags: ['Anime', 'Action', 'Trending']
       },
@@ -66,7 +66,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-11-02T00:00:00.000Z'),
         popularityScore: 100,
         thumbnail: 'https://images.unsplash.com/photo-1635863138275-d9b33299680b?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: true,
         tags: ['Marvel', 'Movie', 'Animation']
       },
@@ -80,7 +80,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-11-16T00:00:00.000Z'),
         popularityScore: 95,
         thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: false,
         tags: ['Gaming', 'Sci-Fi', 'Cinematic']
       },
@@ -94,7 +94,7 @@ const seedUpcoming = async () => {
         releaseDate: new Date('2026-12-01T00:00:00.000Z'),
         popularityScore: 99,
         thumbnail: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80',
-        mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         isFeatured: true,
         tags: ['Anime', 'Blockbuster', 'DemonSlayer']
       }

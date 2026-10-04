@@ -3,27 +3,30 @@ const mongoose = require("mongoose");
 let isConnected = false;
 
 const connectDB = async () => {
-  if (isConnected || mongoose.connection.readyState === 1) {
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
     return mongoose.connection;
   }
 
   const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
   if (!uri) {
-    console.warn("⚠️ Warning: MONGO_URI or MONGODB_URI environment variable is not defined.");
-    return null;
+    const err = new Error("MONGO_URI environment variable is not defined.");
+    console.error("⚠️", err.message);
+    throw err;
   }
 
   try {
     const db = await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
     });
     isConnected = db.connections[0].readyState === 1;
     console.log("✅ MongoDB Connected successfully");
     return db;
   } catch (error) {
+    isConnected = false;
     console.error("❌ MongoDB Connection Error:", error.message);
-    // Do NOT call process.exit(1) here — the per-request middleware will retry.
-    // Calling process.exit crashes the server even when MongoDB becomes available shortly after.
+    throw error;
   }
 };
 

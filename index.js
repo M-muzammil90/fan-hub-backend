@@ -58,12 +58,20 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ── Ensure DB Connection for Serverless ──────────────────────────────────────
 app.use(async (req, res, next) => {
+  // Allow health check without DB
+  if (req.path === "/" || req.path === "/health") {
+    return next();
+  }
   try {
     await connectDB();
     next();
   } catch (err) {
     console.error("DB connection error in middleware:", err.message);
-    next();
+    return res.status(503).json({
+      success: false,
+      message: "Database connection failed. Please ensure MongoDB is running or MONGO_URI is correctly configured.",
+      error: err.message,
+    });
   }
 });
 
